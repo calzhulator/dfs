@@ -1,34 +1,80 @@
 import sqlite3
 import pandas as pd
+import numpy as np
+
+sqlite3.register_adapter(np.int64, lambda val: int(val))
 conn = sqlite3.connect('dataPROD.db')
 c = conn.cursor()
 
 
 def __inception():
     # team and player units
-    c.execute('''CREATE TABLE teams
+    c.execute('''CREATE TABLE IF NOT EXISTS players
+                (playerid integer primary key,
+                link varchar,
+                name varchar)''')
+    c.execute('''CREATE TABLE IF NOT EXISTS playerAliases
+                 (source varchar,
+                 sourceid varchar,
+                 playerid integer,
+                 primary key (source, sourceid))''')
+    c.execute('''CREATE TABLE IF NOT EXISTS teams
                  (teamid integer primary key,
                  link varchar,
                  name varchar)''')
-    c.execute('''CREATE TABLE players
-                 (playerid integer primary key,
-                 link varchar,
-                 name varchar)''')
-    c.execute('''CREATE TABLE teamAliases
+    c.execute('''CREATE TABLE IF NOT EXISTS teamAliases
                  (teamalias varchar primary key,
                  teamid integer)''')
-    c.execute('''CREATE TABLE pfrTimeMapper
-                 (season integer,
-                 teamid integer,
-                 gamenumber integer,
-                 time integer,
-                 primary key (season, teamid, gamenumber))''')
-    c.execute('''CREATE TABLE mapPlayerTeam
-                 (season integer,
-                 time integer,
+    c.execute('''CREATE TABLE IF NOT EXISTS time
+                 (timeid integer primary key,
+                 season integer,
+                 week integer)''')
+    c.execute('''CREATE TABLE IF NOT EXISTS contestStructure
+                 (contestid integer primary key,
+                 platform varchar,
+                 description varchar)''')
+    c.execute('''CREATE TABLE IF NOT EXISTS contestPlayers
+                 (contestid integer,
                  playerid integer,
-                 teamid integer,
-                 primary key (season, time, playerid))''')
+                 timeid integer,
+                 position varchar,
+                 salary float,
+                 points float,
+                 primary key (contestid, playerid, timeid, position))''')
+    c.execute('''CREATE TABLE IF NOT EXISTS games
+                 (gameid integer primary key,
+                 link varchar,
+                 timeid integer,
+                 hometeamid integer,
+                 awayteamid integer)''')
+    c.execute('''CREATE TABLE IF NOT EXISTS gameLog
+                 (gameid integer,
+                 playerid integer,
+                 stat varchar,
+                 value float,
+                 primary key (gameid, playerid, stat))''')
+    c.execute('''CREATE TABLE IF NOT EXISTS playsForTeam
+                (gameid integer,
+                playerid integer,
+                teamid integer,
+                oppid integer,
+                primary key (gameid, playerid))''')
+    c.execute('''CREATE TABLE IF NOT EXISTS projections
+                (timeid integer,
+                playerid integer,
+                source varchar,
+                statistic varchar,
+                value float,
+                primary key (timeid, playerid, source, statistic))''')
+    # c.execute('''CREATE TABLE IF NOT EXISTS contestPositions
+    #              (contestid integer,
+    #              position varchar,
+    #              operator varchar,
+    #              value varchar)''')
+    return None
+
+
+__inception()
 
 
 def series_insert(s_insert, table, auto_insert=False):
@@ -38,12 +84,13 @@ def series_insert(s_insert, table, auto_insert=False):
 
 def df_insert(d_insert, table, auto_insert=False):
     if not auto_insert:
+        pd.set_option('display.max_colwidth', -1)
         print(d_insert)
-        user_in = input("Insert? Type yes: ")
+        user_in = input("Insert into table {t}? Type yes: ".format(t=table))
         assert user_in == 'yes', "Not inserting, break"
     d_insert.to_sql(table, conn, if_exists='append', index=False)
     return d_insert
 
 
-def query(str_qry):
-    return pd.read_sql(str_qry, conn)
+def query(str_qry, params=None):
+    return pd.read_sql(str_qry, conn, params=params)
