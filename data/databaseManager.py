@@ -29,24 +29,33 @@ def __inception():
                  (timeid integer primary key,
                  season integer,
                  week integer)''')
-    c.execute('''CREATE TABLE IF NOT EXISTS contestStructure
+    c.execute('''CREATE TABLE IF NOT EXISTS contests
                  (contestid integer primary key,
+                 timeid integer,
+                 link varchar,
+                 structureid integer,
+                 payoff varchar,
+                 description varchar)''')
+    c.execute('''CREATE TABLE IF NOT EXISTS contestStructure
+                 (structureid integer primary key,
                  platform varchar,
+                 scoring varchar,
                  description varchar)''')
     c.execute('''CREATE TABLE IF NOT EXISTS contestPlayers
-                 (contestid integer,
+                 (structureid integer,
                  playerid integer,
                  timeid integer,
                  position varchar,
                  salary float,
                  points float,
-                 primary key (contestid, playerid, timeid, position))''')
+                 primary key (structureid, playerid, timeid, position))''')
     c.execute('''CREATE TABLE IF NOT EXISTS games
                  (gameid integer primary key,
                  link varchar,
                  timeid integer,
                  hometeamid integer,
-                 awayteamid integer)''')
+                 awayteamid integer,
+                 date text)''')
     c.execute('''CREATE TABLE IF NOT EXISTS gameLog
                  (gameid integer,
                  playerid integer,
@@ -66,7 +75,12 @@ def __inception():
                 statistic varchar,
                 value float,
                 primary key (timeid, playerid, source, statistic))''')
-    # c.execute('''CREATE TABLE IF NOT EXISTS contestPositions
+    c.execute('''CREATE TABLE IF NOT EXISTS contestOwnership
+                (contestid integer,
+                playerid integer,
+                value float,
+                primary key (contestid, playerid))''')
+    # c.execute('''CREATE TABLE IF NOT EXISTS contestConstraints
     #              (contestid integer,
     #              position varchar,
     #              operator varchar,
@@ -94,3 +108,15 @@ def df_insert(d_insert, table, auto_insert=False):
 
 def query(str_qry, params=None):
     return pd.read_sql(str_qry, conn, params=params)
+
+
+def truncate(list_trunc=None):
+    list_tables = query("select name FROM sqlite_master WHERE type = 'table' AND name NOT IN ('teams', 'teamAliases', 'players')")
+    for table in list_tables['name'].values:
+        if list_trunc is not None:
+            if table in list_trunc:
+                c.execute("delete from {t};".format(t=table))
+        else:
+            c.execute("delete from {t};".format(t=table))
+    conn.commit()
+    return None
