@@ -3,7 +3,8 @@ from functools import lru_cache
 
 my_api_key = "AIzaSyDx8_U8dI9SyEMpWq2PM1Q6H1tQpB_W0c0"
 my_cse_id = "011876155113649707850:rwpmxdk0yms"
-overrides = {'profootballreference team ten': ['https://www.pro-football-reference.com/teams/oti/index.htm']}
+overrides = {'profootballreference team ten': ['https://www.pro-football-reference.com/teams/oti/index.htm'],
+             'profootballreference team no': ['https://www.pro-football-reference.com/teams/nor/index.htm']}
 
 
 @lru_cache(maxsize=None)

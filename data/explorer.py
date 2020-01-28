@@ -4,7 +4,7 @@ import scrapers.websites.profootballreference as pfr
 
 
 def player_search(name_search, auto_insert=True, dst_mode=False, filters=None,
-                  source=None, sourceid=None):
+                  source=None, sourceid=None, allow_missing=False):
     insert_source = False
     if source is not None and sourceid is not None:
         alias_qry = """select playerid from playerAliases where source like ? and sourceid like ?"""
@@ -16,13 +16,15 @@ def player_search(name_search, auto_insert=True, dst_mode=False, filters=None,
         if filters is not None:
             if 'team' in filters.keys():
                 name_search = filters['team']
-        teamid = team_search(name_search, auto_insert=auto_insert)
+        teamid = team_search(name_search)
         str_qry = "select name, link from teams where teamid like ?"
         qry_df = dbMgr.query(str_qry, (teamid,))
         player_name = qry_df['name'][0]
         link = qry_df['link'][0]
     else:
-        player_name, link = pfr.find_player_page(name_search, filters)
+        player_name, link = pfr.find_player_page(name_search, filters, allow_missing)
+        if link is None:
+            return None
     str_qry = "select playerid from players where link like ?"
     qry_df = dbMgr.query(str_qry, (link,))
     if len(qry_df['playerid']) == 0:
@@ -72,39 +74,41 @@ def time_search(season, week):
     return qry_df['timeid'][0]
 
 
-def contest_search(platform, description):
-    str_qry = """select contestid from contestStructure
-            where platform = ? and description = ?"""
-    qry_df = dbMgr.query(str_qry, (platform, description))
-    if len(qry_df['contestid']) == 0:
+def structure_search(platform, scoring, description):
+    str_qry = """select structureid from contestStructure
+            where platform = ? and scoring = ? and description = ?"""
+    qry_df = dbMgr.query(str_qry, (platform, scoring, description))
+    if len(qry_df['structureid']) == 0:
         to_insert = pd.Series({'platform': platform,
+                               'scoring': scoring,
                                'description': description,
-                               'contestid': None})
+                               'structureid': None})
         dbMgr.series_insert(to_insert, 'contestStructure', True)
         qry_df = dbMgr.query(str_qry, (platform, description))
-    return qry_df['contestid'][0]
+    return qry_df['structureid'][0]
 
 
-def game_insert(link, timeid, hometeamid, awayteamid):
+def game_insert(link, timeid, hometeamid, awayteamid, date):
     str_qry = 'select gameid from games where link = ?'
     qry_df = dbMgr.query(str_qry, (link,))
     if len(qry_df['gameid']) == 0:
         if None in (timeid, hometeamid, awayteamid):
-            assert None not in (timeid, hometeamid, awayteamid), "Incorrect inputs into game insert function"
+            assert None not in (timeid, hometeamid, awayteamid, date), "Incorrect inputs into game insert function"
         to_insert = pd.Series({'link': link,
                                'timeid': timeid,
                                'hometeamid': hometeamid,
-                               'awayteamid': awayteamid})
+                               'awayteamid': awayteamid,
+                               'date': date})
         dbMgr.series_insert(to_insert, 'games', True)
         qry_df = dbMgr.query(str_qry, (link,))
     return qry_df['gameid'][0]
 
 
-def game_search(timeid, playerid=None, teamid=None):
-    assert (playerid is not None) or (teamid is not None), "Incorrect inputs into game search function"
-    if playerid is not None:
-        str_qry = """select gameid from games where timeid like ? and  like ?"""
-        qry_df = dbMgr.query(str_qry, (link,))
+# def game_search(timeid, playerid=None, teamid=None):
+#     assert (playerid is not None) or (teamid is not None), "Incorrect inputs into game search function"
+#     if playerid is not None:
+#         str_qry = """select gameid from games where timeid like ? and link like ?"""
+#         qry_df = dbMgr.query(str_qry, (link,))
 
 
 # def get_player_gamelog(playerid):
