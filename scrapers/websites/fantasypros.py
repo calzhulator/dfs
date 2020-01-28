@@ -4,12 +4,13 @@ import pandas as pd
 
 main_site = "https://www.fantasypros.com/"
 default_fields = ['PLAYER', 'SOURCE', 'TEAM']
-positions = {'qb': ['PATT', 'PCMP', 'PYDS', 'PTDS', 'PINTS', 'RATT', 'RYDS', 'RTDS','FL','FPTS'],
-             'rb': ['RATT', 'RYDS', 'RTDS', 'REC','RECYDS','RECTDS','FL','FPTS'],
-             'wr': ['REC','RECYDS','RECTDS','RATT', 'RYDS', 'RTDS','FL','FPTS'],
-             'te': ['REC','RECYDS','RECTDS','FL','FPTS'],
-             'k': ['FG','FGA','XPTS','FPTS'],
-             'dst': ['SACK','INT','FR','FF','TD','SAFETY','PA','YDSAG','FPTS']}
+positions = {'qb': ['pass_att', 'pass_cmp', 'pass_yds', 'pass_td', 'pass_int', 'rush_att',
+                    'rush_yds', 'rush_td', 'fumbles_lost', 'FPTS_HALF'],
+             'rb': ['rush_att', 'rush_yds', 'rush_td', 'rec', 'rec_yds', 'rec_td', 'fumbles_lost', 'FPTS_HALF'],
+             'wr': ['rec', 'rec_yds', 'rec_td', 'rush_att', 'rush_yds', 'rush_td', 'fumbles_lost', 'FPTS_HALF'],
+             'te': ['rec', 'rec_yds', 'rec_td', 'fumbles_lost', 'FPTS_HALF'],
+             'k': ['FG', 'FGA', 'XPTS', 'FPTS_HALF'],
+             'dst': ['SACK', 'INT', 'FR', 'FF', 'TD', 'SAFETY', 'PA', 'YDSAG', 'FPTS_HALF']}
 
 
 def get_projections(year, week):
@@ -39,18 +40,18 @@ def get_projections(year, week):
                     else:
                         row_data[second_count] = ds.get_text()
                     second_count = second_count + 1
-                if (row_data[0] != '') and (row_data[0] not in ('Robert Foster')):
+                if row_data[0] != '':
                     body_data[count] = row_data
                     count = count + 1
             body_data = pd.DataFrame(body_data).T
             body_data.columns = default_fields + positions[pos]
-            type_dict = {stat: float for stat in positions[pos] if stat not in ('PLAYER', 'SOURCE', 'TEAM')}
+            type_dict = {stat: float for stat in positions[pos]}
             body_data = body_data.astype(type_dict)
             body_data['position'] = pos.upper()
             body_data['year'] = year
             body_data['week'] = week
             if pos != 'DST':
-                body_data = body_data[body_data['FPTS'] >= 1.0]
+                body_data = body_data[body_data['FPTS_HALF'] >= 5.0]
             concat_df = concat_df.append(body_data, ignore_index=True, sort=True)
         else:
             return None
