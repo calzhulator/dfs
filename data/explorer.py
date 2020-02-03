@@ -62,21 +62,25 @@ def team_search(name_search, auto_insert=True):
     return qry_df['teamid'][0]
 
 
-def time_search(season, week):
-    str_qry = 'select timeid from time where season = ? and week = ?'
-    qry_df = dbMgr.query(str_qry, (season, week))
-    if len(qry_df['timeid']) == 0:
-        to_insert = pd.Series({'season': season,
-                               'week': week,
-                               'timeid': None})
-        dbMgr.series_insert(to_insert, 'time', True)
+def time_search(season=None, week=None, date=None):
+    if None not in (season, week):
+        str_qry = 'select timeid from time where season = ? and week = ?'
         qry_df = dbMgr.query(str_qry, (season, week))
+        if len(qry_df['timeid']) == 0:
+            to_insert = pd.Series({'season': season,
+                                   'week': week,
+                                   'timeid': None})
+            dbMgr.series_insert(to_insert, 'time', True)
+            qry_df = dbMgr.query(str_qry, (season, week))
+    elif date is not None:
+        str_qry = 'select distinct timeid from games where date = ?'
+        qry_df = dbMgr.query(str_qry, (date,))
+    assert len(qry_df['timeid']) == 1, "Times are not loaded properly"
     return qry_df['timeid'][0]
 
 
 def structure_search(platform, scoring, description):
-    str_qry = """select structureid from contestStructure
-            where platform = ? and scoring = ? and description = ?"""
+    str_qry = """select structureid from contestStructure where platform = ? and scoring = ? and description = ?"""
     qry_df = dbMgr.query(str_qry, (platform, scoring, description))
     if len(qry_df['structureid']) == 0:
         to_insert = pd.Series({'platform': platform,
@@ -84,16 +88,15 @@ def structure_search(platform, scoring, description):
                                'description': description,
                                'structureid': None})
         dbMgr.series_insert(to_insert, 'contestStructure', True)
-        qry_df = dbMgr.query(str_qry, (platform, description))
+        qry_df = dbMgr.query(str_qry, (platform, scoring, description))
     return qry_df['structureid'][0]
 
 
-def game_insert(link, timeid, hometeamid, awayteamid, date):
+def game_insert(link, timeid=None, hometeamid=None, awayteamid=None, date=None):
     str_qry = 'select gameid from games where link = ?'
     qry_df = dbMgr.query(str_qry, (link,))
     if len(qry_df['gameid']) == 0:
-        if None in (timeid, hometeamid, awayteamid):
-            assert None not in (timeid, hometeamid, awayteamid, date), "Incorrect inputs into game insert function"
+        assert None not in (timeid, hometeamid, awayteamid, date), "Incorrect inputs into game insert function"
         to_insert = pd.Series({'link': link,
                                'timeid': timeid,
                                'hometeamid': hometeamid,
@@ -102,6 +105,19 @@ def game_insert(link, timeid, hometeamid, awayteamid, date):
         dbMgr.series_insert(to_insert, 'games', True)
         qry_df = dbMgr.query(str_qry, (link,))
     return qry_df['gameid'][0]
+
+
+def contest_insert(link, timeid=None, structureid=None):
+    str_qry = 'select contestid from contests where link = ?'
+    qry_df = dbMgr.query(str_qry, (link,))
+    if len(qry_df['contestid']) == 0:
+        assert None not in (timeid, structureid), "Incorrect inputs into contest insert function"
+        to_insert = pd.Series({'link': link,
+                               'timeid': timeid,
+                               'structureid': structureid})
+        dbMgr.series_insert(to_insert, 'contests', True)
+        qry_df = dbMgr.query(str_qry, (link,))
+    return qry_df['contestid'][0]
 
 
 # def game_search(timeid, playerid=None, teamid=None):
