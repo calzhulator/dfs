@@ -40,7 +40,7 @@ def get_contest_stats(date):
                     headers = [x.get_text() for x in rows[i].find_all('span', {'class': 'ant-table-header-column'})]
                 else:
                     test_list = [x.get_text().replace('$', '').replace(',', '') if x.get_text() != 'Contest'
-                                     else x.find('a')['href'] for x in rows[i].find_all('td')]
+                                 else x.find('a')['href'] for x in rows[i].find_all('td')]
                     contest_df[i] = [x if x != '' else None for x in test_list]
             contest_df = pd.DataFrame(contest_df, index=headers).T
             float_cols = ['Prize Pool', 'Buy In', 'Top Prize', 'Max Entries', 'Entries', 'Cash Line', 'Winning Score']
@@ -53,14 +53,15 @@ def get_contest_stats(date):
             ownership_df = {}
             for i in range(len(rows)):
                 if i == 0:
-                    headers = [x.get_text() for x in rows[i].find_all('span', {'class': 'ant-table-header-column'})]
+                    headers = [x.get_text().replace('$', '').replace(',', '')
+                               for x in rows[i].find_all('span', {'class': 'ant-table-header-column'})]
                 else:
                     td_rows = rows[i].find_all('td')
                     output = []
                     for x in td_rows:
                         td_text = x.get_text().split(' (')[0]
                         if '%' in td_text:
-                            output.append(float(td_text.replace('%','')) / 100.0)
+                            output.append(float(td_text.replace('%', '')) / 100.0)
                         else:
                             test_text = td_text.replace('/FLEX', '')
                             if test_text == '':
