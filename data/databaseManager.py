@@ -33,9 +33,12 @@ def __inception():
                  (contestid integer primary key,
                  timeid integer,
                  link varchar,
-                 structureid integer,
-                 payoff varchar,
-                 description varchar)''')
+                 structureid integer)''')
+    c.execute('''CREATE TABLE IF NOT EXISTS contestStats
+                 (contestid integer,
+                 stat varchar,
+                 value float,
+                 primary key (contestid, stat))''')
     c.execute('''CREATE TABLE IF NOT EXISTS contestStructure
                  (structureid integer primary key,
                  platform varchar,
@@ -111,12 +114,13 @@ def query(str_qry, params=None):
 
 
 def truncate(list_trunc=None):
-    list_tables = query("select name FROM sqlite_master WHERE type = 'table' AND name NOT IN ('teams', 'teamAliases', 'players')")
+    list_tables = query("""select name FROM sqlite_master WHERE type = 'table' 
+                            AND name NOT IN ('teams', 'teamAliases', 'players')""")
     for table in list_tables['name'].values:
         if list_trunc is not None:
             if table in list_trunc:
-                c.execute("delete from {t};".format(t=table))
+                c.execute("drop table if exists {t};".format(t=table))
         else:
-            c.execute("delete from {t};".format(t=table))
+            c.execute("drop table if exists {t};".format(t=table))
     conn.commit()
     return None
