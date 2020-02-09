@@ -150,7 +150,6 @@ def load_ownership(historical=False):
                         if len(test_data[key][1][temp_contest]) > 100:
                             day_df[key] = temp_contest
         for dd, val in day_df.items():
-            print(dd)
             contest_df = test_data[dd][0][val]
             ownership_df = test_data[dd][1][val]
             ownership_df.columns = [x.replace('$', '').replace(',', '') for x in ownership_df.columns]
