@@ -51,5 +51,11 @@ def get_projections(year, week):
         all_data['position'] = pos.upper()
         all_data['year'] = year
         all_data['week'] = week
+        if 'rec' in body_data.columns:
+            all_data['FPTS_FULL'] = all_data['FPTS_HALF'] + .5 * all_data['rec'].fillna(0.0)
+            all_data['FPTS_STD'] = all_data['FPTS_HALF'] - .5 * all_data['rec'].fillna(0.0)
+        else:
+            all_data['FPTS_FULL'] = all_data['FPTS_HALF']
+            all_data['FPTS_STD'] = all_data['FPTS_HALF']
         concat_df = concat_df.append(all_data, ignore_index=True, sort=True)
     return concat_df
