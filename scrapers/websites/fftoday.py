@@ -51,7 +51,7 @@ def get_projections(year, week):
         all_data['position'] = pos.upper()
         all_data['year'] = year
         all_data['week'] = week
-        if 'rec' in body_data.columns:
+        if 'rec' in all_data.columns:
             all_data['FPTS_FULL'] = all_data['FPTS_HALF'] + .5 * all_data['rec'].fillna(0.0)
             all_data['FPTS_STD'] = all_data['FPTS_HALF'] - .5 * all_data['rec'].fillna(0.0)
         else:

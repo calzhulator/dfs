@@ -1,15 +1,43 @@
 <component name="ProjectDictionaryState">
   <dictionary name="calvin">
     <words>
+      <w>awayteam</w>
+      <w>awayteamid</w>
+      <w>boxscore</w>
+      <w>contestid</w>
       <w>customsearch</w>
+      <w>descrip</w>
+      <w>draftkings</w>
+      <w>dropdown</w>
+      <w>dropdowns</w>
+      <w>fanduel</w>
+      <w>fantasypros</w>
       <w>fcgi</w>
+      <w>fftoday</w>
+      <w>fpts</w>
+      <w>gameid</w>
+      <w>gamelog</w>
       <w>gamenumber</w>
+      <w>googling</w>
+      <w>hometeam</w>
+      <w>hometeamid</w>
       <w>lxml</w>
+      <w>oppid</w>
       <w>playerid</w>
       <w>profootballreference</w>
+      <w>proj</w>
+      <w>rotogrinders</w>
       <w>rwpmxdk</w>
+      <w>scoringid</w>
+      <w>scsv</w>
+      <w>sourceid</w>
+      <w>structureid</w>
+      <w>tbody</w>
       <w>teamalias</w>
       <w>teamid</w>
+      <w>timeid</w>
+      <w>xpts</w>
+      <w>ydsag</w>
     </words>
   </dictionary>
 </component>

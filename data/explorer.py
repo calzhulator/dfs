@@ -43,6 +43,8 @@ def player_search(name_search, auto_insert=True, dst_mode=False, filters=None,
 
 def team_search(name_search, auto_insert=True):
     name_search = name_search.lower()
+    if name_search == 'fa':  # fantasy pros
+        return -999
     alias_qry = "select teamid from teamAliases where teamalias = ?"
     alias_df = dbMgr.query(alias_qry, (name_search,))
     if len(alias_df['teamid']) == 1:
@@ -89,7 +91,41 @@ def structure_search(platform, scoring, description):
                                'structureid': None})
         dbMgr.series_insert(to_insert, 'contestStructure', True)
         qry_df = dbMgr.query(str_qry, (platform, scoring, description))
+    structure_constraints(qry_df['structureid'][0], platform, description)
     return qry_df['structureid'][0]
+
+
+def structure_constraints(structureid, platform, description):
+    str_qry = """select structureid from structureConstraints where structureid = ?"""
+    qry_df = dbMgr.query(str_qry, (structureid,))
+    constraint_df = None
+    if len(qry_df['structureid']) == 0:
+        if platform == 'fanduel':
+            if description == 'all week without kicker':
+                list_constraints = [("bound", "<=", None, 1), ("bound", ">=", None, 0), ("dot", "==", 'DST', 1),
+                    ("dot", "==", 'QB', 1), ("dot", ">=", 'RB', 2), ("dot", "<=", 'RB', 3), ("dot", ">=", 'WR', 3),
+                    ("dot", "<=", 'WR', 4), ("dot", ">=", 'TE', 1), ("dot", "<=", 'TE', 2), ("dot", "==", 'Flex', 7),
+                    ("dot", "<=", 'salary', 60000)]
+            elif description == 'all week with kicker':
+                list_constraints = [("bound", "<=", None, 1), ("bound", ">=", None, 0), ("dot", "==", 'DST', 1),
+                    ("dot", "==", 'QB', 1), ("dot", "==", 'RB', 2), ("dot", "==", 'WR', 3), ("dot", "==", 'TE', 1),
+                    ("dot", "<=", 'salary', 60000), ("dot", "==", 'K', 1)]
+        elif platform == 'draftkings':
+            list_constraints = [("bound", "<=", None, 1), ("bound", ">=", None, 0), ("dot", "==", 'DST', 1),
+                    ("dot", "==", 'QB', 1), ("dot", ">=", 'RB', 2), ("dot", "<=", 'RB', 3), ("dot", ">=", 'WR', 3),
+                    ("dot", "<=", 'WR', 4), ("dot", ">=", 'TE', 1), ("dot", "<=", 'TE', 2), ("dot", "==", 'Flex', 7),
+                    ("dot", "<=", 'salary', 50000)]
+        elif platform == 'yahoo':
+            list_constraints = [("bound", "<=", None, 1), ("bound", ">=", None, 0), ("dot", "==", 'DST', 1),
+                                ("dot", "==", 'QB', 1), ("dot", ">=", 'RB', 2), ("dot", "<=", 'RB', 3),
+                                ("dot", ">=", 'WR', 3), ("dot", "<=", 'WR', 4), ("dot", ">=", 'TE', 1),
+                                ("dot", "<=", 'TE', 2), ("dot", "==", 'Flex', 7), ("dot", "<=", 'salary', 200)]
+        constraint_df = pd.DataFrame(list_constraints)
+    if constraint_df is not None:
+        constraint_df.columns = ['type', 'operator', 'vec', 'bound']
+        constraint_df['structureid'] = structureid
+        dbMgr.df_insert(constraint_df, 'structureConstraints', True)
+    return None
 
 
 def game_insert(link, timeid=None, hometeamid=None, awayteamid=None, date=None):
@@ -118,7 +154,6 @@ def contest_insert(link, timeid=None, structureid=None):
         dbMgr.series_insert(to_insert, 'contests', True)
         qry_df = dbMgr.query(str_qry, (link,))
     return qry_df['contestid'][0]
-
 
 # def game_search(timeid, playerid=None, teamid=None):
 #     assert (playerid is not None) or (teamid is not None), "Incorrect inputs into game search function"

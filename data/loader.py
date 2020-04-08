@@ -12,8 +12,7 @@ pd.options.mode.chained_assignment = None
 years = range(2011, 2020)
 platforms = rg.site_mappings.keys()
 weeks = range(1, 18)
-projections_sources = {'fantasypros': fp,
-                       'fftoday': fft}
+projections_sources = {'fantasypros': fp, 'fftoday': fft}
 
 
 def load_salaries(historical=False):
@@ -35,7 +34,7 @@ def load_salaries(historical=False):
                         else:
                             platform_df['structureid'] = exp.structure_search(plat, scoring_mode,
                                                                               'all week without kicker')
-                        all_data = all_data.append(platform_df, ignore_index=True)
+                        all_data = all_data.append(platform_df, ignore_index=True, sort=False)
     else:
         1 + 1
     loop_df = {}
@@ -104,25 +103,32 @@ def load_projections(historical=False):
             all_data = pd.DataFrame()
             for year in years:
                 for week in weeks:
-                    platform_df = proj_class.get_projections(year, week)
-                    if platform_df is not None:
-                        platform_df['timeid'] = exp.time_search(year, week)
-                        platform_df['source'] = proj_source
-                        all_data = all_data.append(platform_df, ignore_index=True)
+                    exist_df = dbMgr.query("""select playerid from projections proj
+                                            join time t on proj.timeid = t.timeid
+                                            where season = {}
+                                            and week = {}
+                                            and source = '{}'""".format(year, week, proj_source))
+                    if len(exist_df) == 0:
+                        platform_df = proj_class.get_projections(year, week)
+                        if platform_df is not None:
+                            platform_df['timeid'] = exp.time_search(year, week)
+                            platform_df['source'] = proj_source
+                            all_data = all_data.append(platform_df, ignore_index=True, sort=False)
         else:
             1 + 1
-        all_data['playerid'] = all_data.apply(lambda x: exp.player_search(x.PLAYER, dst_mode=(x.position == 'DST'),
-                                                                          filters={'position': x.position,
-                                                                                   'year': x.year,
-                                                                                   'team': x.TEAM},
-                                                                          auto_insert=True, source=proj_source,
-                                                                          sourceid=x.SOURCE, allow_missing=True),
-                                              axis=1)
-        all_data = all_data[all_data['playerid'].notnull()]
-        stats = list(set(sum(proj_class.positions.values(), [])))
-        stacked_df = all_data.groupby(['timeid', 'playerid', 'source'])[stats].mean().stack().dropna().reset_index()
-        stacked_df.columns = ['timeid', 'playerid', 'source', 'statistic', 'value']
-        dbMgr.df_insert(stacked_df, 'projections', True)
+        if len(all_data) > 0:
+            all_data['playerid'] = all_data.apply(lambda x: exp.player_search(x.PLAYER, dst_mode=(x.position == 'DST'),
+                                                                              filters={'position': x.position,
+                                                                                       'year': x.year,
+                                                                                       'team': x.TEAM},
+                                                                              auto_insert=True, source=proj_source,
+                                                                              sourceid=x.SOURCE, allow_missing=True),
+                                                  axis=1)
+            all_data = all_data[all_data['playerid'].notnull()]
+            stats = list(set(sum(proj_class.positions.values(), [])).union({'FPTS_HALF', 'FPTS_STD', 'FPTS_FULL'}))
+            stacked_df = all_data.groupby(['timeid', 'playerid', 'source'])[stats].mean().stack().dropna().reset_index()
+            stacked_df.columns = ['timeid', 'playerid', 'source', 'statistic', 'value']
+            dbMgr.df_insert(stacked_df, 'projections', True)
     return None
 
 

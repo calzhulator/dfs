@@ -83,11 +83,13 @@ def __inception():
                 playerid integer,
                 value float,
                 primary key (contestid, playerid))''')
-    # c.execute('''CREATE TABLE IF NOT EXISTS contestConstraints
-    #              (contestid integer,
-    #              position varchar,
-    #              operator varchar,
-    #              value varchar)''')
+    c.execute('''CREATE TABLE IF NOT EXISTS structureConstraints
+                 (structureid integer,
+                 type varchar,
+                 operator varchar,
+                 vec varchar,
+                 bound float,
+                 primary key (structureid, type, operator, vec))''')
     return None
 
 
@@ -115,7 +117,7 @@ def query(str_qry, params=None):
 
 def truncate(list_trunc=None):
     list_tables = query("""select name FROM sqlite_master WHERE type = 'table' 
-                            AND name NOT IN ('teams', 'teamAliases', 'players')""")
+                            AND name NOT IN ('teams', 'teamAliases', 'players', 'playerAliases')""")
     for table in list_tables['name'].values:
         if list_trunc is not None:
             if table in list_trunc:
@@ -124,3 +126,16 @@ def truncate(list_trunc=None):
             c.execute("drop table if exists {t};".format(t=table))
     conn.commit()
     return None
+
+
+def list_overrides():
+    print("""Steve Smiths before loading fantasypros projections
+
+    insert into playerAliases (source, sourceid, playerid)
+    select 'fantasypros', 9579, playerid from players
+    where link like 'https://www.pro-football-reference.com/players/S/SmitSt01.htm'
+    
+    insert into playerAliases (source, sourceid, playerid)
+    select 'fantasypros', 9580, playerid from players
+    where link like 'https://www.pro-football-reference.com/players/S/SmitSt02.htm'
+    """)
